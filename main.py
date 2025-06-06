@@ -54,7 +54,7 @@ digital_styles = [
 
 # Combined list for easy random selection
 all_styles = artists + art_styles + directors + photo_styles + digital_styles
-all_styles.shuffle()
+random.shuffle(all_styles)
 
 # Example usage:
 # import random
@@ -146,6 +146,8 @@ if __name__ == "__main__":
 
         You MUST use one of the following styles, artists and movements:
         {", ".join(random.sample(all_styles, 5))}
+
+        Be wild and creative in your thinking!  The person who sees the final image should think "WOW!!!!"
         """
         response = get_llm_response(prompt, model="anthropic/claude-sonnet-4-20250514")
         image_prompt = response.choices[0].message.content
@@ -157,6 +159,8 @@ if __name__ == "__main__":
         print("-" * 20)
         # break
 
+
+    print("Generating morph video")
     final_video = generate_morph_video(filenames, output_path="final_video.mp4")
     print(f"Final video generated: {final_video}")
 

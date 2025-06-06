@@ -44,6 +44,7 @@ def generate_morph_video(input_dir, output_path, steps_per_morph=20):
     images, files = load_images(input_dir)
     all_frames = []
     for i in range(len(images) - 1):
+        print(f"Generating morph frames for {i + 1} of {len(images)}")
         morph = generate_morph_frames(images[i], images[i+1], steps=steps_per_morph)
         all_frames.extend(morph)
     save_video(all_frames, output_path)
