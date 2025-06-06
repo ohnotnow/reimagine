@@ -1,104 +1,107 @@
 # Reimagine
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+**Version**: 0.1.0
+**License**: MIT (see LICENSE)
 
-A Python CLI tool that transcribes a video’s visual scenes into prompts, generates corresponding images via Stable Diffusion, and morphs them into a final video montage.
+Reimagine is a Python CLI tool that transforms a text transcript (e.g., a video transcription or scene descriptions) into a dynamic, morphing video montage. It uses a large-language model (Litellm) to craft Stable Diffusion prompts, generates images via Replicate, then stitches those images together with optical-flow–based morph transitions using OpenCV.
 
-## Features
+The idea is to let the LLM's and image-generation model 're-imagine' the original video.
 
-- Downloads a video from a URL  
-- Uses a vision‐focused LLM to summarize scenes  
-- Generates Stable Diffusion image prompts per scene  
-- Renders images with `image-gen` and compiles them into a video morph  
-- Configurable via environment variables and CLI flags  
+---
 
-## Repository
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [License](#license)
+
+---
+
+## Quick Start
 
 ```bash
-git clone https://github.com/ohnotnow/reimagine.git
+# 1. Clone the repo
+git clone git@github.com:ohnotnow/reimagine.git
 cd reimagine
+
+# 2. Install dependencies
+uv sync
+
+# 3. Configure API keys (see below)
+export REPLICATE_API_TOKEN="your_replicate_token"
+export ANTHROPIC_API_KEY="your_litellm_key"
+# or OPENAI_API_KEY, OPENROUTER_API_KEY, etc
+
+# 4. Run Reimagine on a transcript
+uv run main.py path/to/your_transcript.md \
+    --output_file my_video.mp4 \
+    --steps_per_morph 50
 ```
+
+---
 
 ## Prerequisites
 
-- Git  
-- Python 3.8+  
-- `uv` CLI (for dependency management & execution)  
-  Documentation: https://docs.astral.sh/uv/  
+- Python ≥ 3.13
+- [uv CLI](https://docs.astral.sh/uv/getting-started/installation/) (for dependency management & execution)
+- Replicate account & API token
+- (Optional) Anthropic or OpenAI API token for Litellm
+
+---
 
 ## Installation
 
-### macOS & Linux (Ubuntu)
+1. Ensure `uv` is installed and on your `PATH`.
+2. Clone the repo:
+   ```bash
+   git clone git@github.com:ohnotnow/reimagine.git
+   cd reimagine
+   ```
+3. Install Python dependencies:
+   ```bash
+   uv sync
+   ```
+4. Copy or set environment variables:
+   ```bash
+   export REPLICATE_API_TOKEN="YOUR_REPLICATE_API_TOKEN"
+   export LITELLM_API_KEY="YOUR_LITELLM_API_KEY"
+   ```
+5. (Optional) Adjust Jinja templates in `prompts/` or add new ones.
 
-```bash
-# (Optional) create and activate a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install uv tool if not already installed
-python3 -m pip install uv
-
-# Install project dependencies
-uv sync
-```
-
-### Windows (PowerShell)
-
-```powershell
-# (Optional) create and activate a virtual environment
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# Install uv tool if not already installed
-python -m pip install uv
-
-# Install project dependencies
-uv sync
-```
-
-## Configuration
-
-Environment variables:
-
-- `GOOGLE_API_KEY` – required by the image generation component  
-- `ANTHROPIC_API_KEY` – required for LLM calls  
-
-Export them in your shell before running:
-
-```bash
-export GOOGLE_API_KEY="…"
-export ANTHROPIC_API_KEY="…"
-```
+---
 
 ## Usage
 
 ```bash
-uv run main.py -- <video_url>
+uv run main.py <transcript_file> [--output_file OUTPUT] [--steps_per_morph N]
 ```
 
-Positional arguments:
+Arguments:
 
-  video_url    URL of the video to process
+- `<transcript_file>`
+  Path to a plain-text transcript (one scene or paragraph per line).
+- `--output_file` (default: `final_video.mp4`)
+  Path to write the resulting MP4 video.
+- `--steps_per_morph` (default: `50`)
+  Number of intermediate frames per image transition - bigger means a slower/gentler image transition.
 
-Example:
+---
 
-```bash
-uv run main.py -- "https://example.com/my-video.mp4"
-```
+## Configuration
 
-On success, a file named `final_video.mp4` will be emitted in the project root.
+- **Models**
+  - LLM: default in code is `anthropic/claude-sonnet-4-20250514`. Override in `get_llm_response()`.
+  - Image: default Replicate model is `black-forest-labs/flux-kontext-pro`. Override in `generate_image()`.
+- **Prompts**
+  - Templates live in `prompts/*.jinja`. Use Jinja2 syntax to add new templates or variables.
+- **Styles**
+  - Customize visual styles by editing `styles.py`.
 
-## Project Structure
-
-```
-├── image_gen.py        # wraps Stable Diffusion API calls
-├── llm.py              # wraps LLM summarization calls
-├── morph.py            # stitches images into a morph video
-├── main.py             # entrypoint: download → summarize → image-gen → morph
-├── requirements.txt    # pinned Python dependencies
-└── images/             # intermediate generated frames
-```
+---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
