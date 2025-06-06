@@ -22,7 +22,7 @@ def generate_morph_frames(img1, img2, steps=20):
                                         None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
     morph_frames = []
-    for i in range(steps):
+    for i in range(steps + 1):  # Include the final frame
         alpha = i / float(steps)
         flow_scaled = flow * alpha
         h, w = flow.shape[:2]

@@ -3,6 +3,61 @@ import os
 import subprocess
 from llm import get_llm_response
 from image_gen import generate_image
+import random
+# Artists and Styles for Diffusion Model Prompts
+
+# Visual Artists
+artists = [
+    "Van Gogh", "Picasso", "Monet", "Da Vinci", "Michelangelo", "Rembrandt",
+    "Dali", "Warhol", "Pollock", "Matisse", "Cezanne", "Renoir", "Degas",
+    "Hokusai", "Frida Kahlo", "Georgia O'Keeffe", "Basquiat", "Banksy",
+    "Rothko", "Kandinsky", "Mondrian", "Magritte", "Escher", "Caravaggio",
+    "Botticelli", "Raphael", "Toulouse-Lautrec", "Gauguin", "Manet",
+    "Klimt", "Schiele", "Bacon", "Hockney", "Hopper", "Wyeth"
+]
+
+# Art Styles and Movements
+art_styles = [
+    "impressionist", "cubist", "surrealist", "abstract expressionist",
+    "pop art", "art nouveau", "baroque", "renaissance", "romantic",
+    "realist", "minimalist", "fauvism", "dadaism", "pointillism",
+    "expressionist", "futurist", "constructivist", "art deco",
+    "photorealistic", "hyperrealistic", "watercolor", "oil painting",
+    "digital art", "concept art", "street art", "graffiti style",
+    "comic book style", "anime style", "manga style", "ukiyo-e"
+]
+
+# Film Directors (for cinematic styles)
+directors = [
+    "Kubrick", "Hitchcock", "Scorsese", "Tarantino", "Spielberg",
+    "Wes Anderson", "Tim Burton", "David Lynch", "Ridley Scott",
+    "Christopher Nolan", "Akira Kurosawa", "Wong Kar-wai",
+    "Terrence Malick", "Denis Villeneuve", "Coen Brothers",
+    "Paul Thomas Anderson", "Darren Aronofsky", "Guillermo del Toro"
+]
+
+# Photography Styles
+photo_styles = [
+    "film noir", "golden hour", "blue hour", "high contrast",
+    "black and white", "sepia", "vintage", "polaroid", "35mm film",
+    "macro photography", "wide angle", "telephoto", "bokeh",
+    "street photography", "portrait photography", "landscape photography"
+]
+
+# Digital/Modern Styles
+digital_styles = [
+    "cyberpunk", "steampunk", "vaporwave", "synthwave", "pixel art",
+    "low poly", "isometric", "neon", "glitch art", "holographic",
+    "matte painting", "concept art", "game art", "3D render"
+]
+
+# Combined list for easy random selection
+all_styles = artists + art_styles + directors + photo_styles + digital_styles
+
+# Example usage:
+# import random
+# selected_style = random.choice(all_styles)
+# prompt = f"a beautiful landscape in the style of {selected_style}"
 
 def download_video(url: str) -> str:
     # download the video from the url
@@ -81,14 +136,14 @@ def main(video_url: str) -> str:
     return final_video
 
 if __name__ == "__main__":
-    transcript_file = "transcript.md"
+    transcript_file = "recipethis.md"
     paragraphs = Path(transcript_file).read_text().split("\n")
     filenames = []
     for i, paragraph in enumerate(paragraphs):
         paragraph = paragraph.strip()
         if not paragraph:
             continue
-        image_filename = f"stalker_{i}.jpg"
+        image_filename = f"recipethis_{i:02d}.jpg"
         filenames.append(os.path.join("images", image_filename))
         if os.path.exists(os.path.join("images", image_filename)):
             print(f"Image already exists: {image_filename}")
@@ -107,23 +162,27 @@ if __name__ == "__main__":
         The image prompt should be a single sentence that captures the essence of the scene.
         The image prompt should include detailed descriptions as fitting a Stable Diffusion image prompt.
         The image prompt should be visually appealing and engaging.
+        The image prompt should be artistic and creative.
         The image prompt should include a stylistic style to use when generating the image.
 
         Please respond with ONLY the image prompt, no other text.  Your response will be given directly
         to the Stable Diffusion image generator so any extra text will cause the image generator to fail.  Do not
         wrap the prompt in any xml or markdown tags.
+
+        You MUST use one of the following styles, artists and movements:
+        {", ".join(random.sample(all_styles, 5))}
         """
-        response = get_llm_response(prompt)
+        response = get_llm_response(prompt, model="anthropic/claude-sonnet-4-20250514")
         image_prompt = response.choices[0].message.content
         print(f"Image prompt: {image_prompt}")
         print("-" * 20)
         print("Generating image for paragraph")
-        image_file = generate_image(image_prompt, output_file=image_filename)
+        image_file = generate_image(image_prompt, output_file=image_filename, model="google/imagen-4")
         print(f"Image generated: {image_file}")
         print("-" * 20)
-        break
+        # break
 
-    final_video = generate_final_video(filenames, output_file="final_video.mp4")
-    print(f"Final video generated: {final_video}")
+    # final_video = generate_final_video(filenames, output_file="final_video.mp4")
+    # print(f"Final video generated: {final_video}")
 
     # print(f"output_file: {output_file}")
