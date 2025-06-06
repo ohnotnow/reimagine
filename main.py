@@ -1,167 +1,75 @@
 from pathlib import Path
 import os
-import subprocess
+import argparse
 from llm import get_llm_response
 from image_gen import generate_image
-import random
 from morph import generate_morph_video
-# Artists and Styles for Diffusion Model Prompts
+from styles import get_random_styles
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-# Visual Artists
-artists = [
-    "Van Gogh", "Picasso", "Monet", "Da Vinci", "Michelangelo", "Rembrandt",
-    "Dali", "Warhol", "Pollock", "Matisse", "Cezanne", "Renoir", "Degas",
-    "Hokusai", "Frida Kahlo", "Georgia O'Keeffe", "Basquiat", "Banksy",
-    "Rothko", "Kandinsky", "Mondrian", "Magritte", "Escher", "Caravaggio",
-    "Botticelli", "Raphael", "Toulouse-Lautrec", "Gauguin", "Manet",
-    "Klimt", "Schiele", "Bacon", "Hockney", "Hopper", "Wyeth"
-]
+def get_prompt(name: str, variables: dict[str, str] = {}) -> str:
+    """
+    Get a prompt from the prompts directory and render it with the given variables.
+    """
+    env = Environment(
+        loader=FileSystemLoader("prompts"),
+        autoescape=select_autoescape()
+    )
+    template = env.get_template(f"{name}.jinja")
+    return template.render(variables)
 
-# Art Styles and Movements
-art_styles = [
-    "impressionist", "cubist", "surrealist", "abstract expressionist",
-    "pop art", "art nouveau", "baroque", "renaissance", "romantic",
-    "realist", "minimalist", "fauvism", "dadaism", "pointillism",
-    "expressionist", "futurist", "constructivist", "art deco",
-    "photorealistic", "hyperrealistic", "watercolor", "oil painting",
-    "digital art", "concept art", "street art", "graffiti style",
-    "comic book style", "anime style", "manga style", "ukiyo-e"
-]
-
-# Film Directors (for cinematic styles)
-directors = [
-    "Kubrick", "Hitchcock", "Scorsese", "Tarantino", "Spielberg",
-    "Wes Anderson", "Tim Burton", "David Lynch", "Ridley Scott",
-    "Christopher Nolan", "Akira Kurosawa", "Wong Kar-wai",
-    "Terrence Malick", "Denis Villeneuve", "Coen Brothers",
-    "Paul Thomas Anderson", "Darren Aronofsky", "Guillermo del Toro"
-]
-
-# Photography Styles
-photo_styles = [
-    "film noir", "golden hour", "blue hour", "high contrast",
-    "black and white", "sepia", "vintage", "polaroid", "35mm film",
-    "macro photography", "wide angle", "telephoto", "bokeh",
-    "street photography", "portrait photography", "landscape photography"
-]
-
-# Digital/Modern Styles
-digital_styles = [
-    "cyberpunk", "steampunk", "vaporwave", "synthwave", "pixel art",
-    "low poly", "isometric", "neon", "glitch art", "holographic",
-    "matte painting", "concept art", "game art", "3D render"
-]
-
-# Combined list for easy random selection
-all_styles = artists + art_styles + directors + photo_styles + digital_styles
-random.shuffle(all_styles)
-
-# Example usage:
-# import random
-# selected_style = random.choice(all_styles)
-# prompt = f"a beautiful landscape in the style of {selected_style}"
-
-def download_video(url: str) -> str:
-    # download the video from the url
-    # save the video to the local filesystem
-    # return the path to the video
-    pass
 
 def summarize_video(url: str) -> str:
     # pass the video to the gemini api to summarize the video
     # we should get back a summarised transcript of the video
-    prompt = f"""
-    Could you please transcribe this video visually?  I would like a markdown numbered list of each scene you describe.
-
-If the video has text/subtitles/overlays you do not need to mention those - I am purely interested in the visual description of each scene.
-
-Please describe each scene as a stand-alone description, do not relate it to previous or forthcoming scenes.
-
-For example, do not use phrases like 'The man continues on his walk', or 'The woman ...' - use 'A man walks' or 'A woman ...'.
-
-Another example, do not describe the scene in multiple steps such as 'A hand with pink nail polish removes the basket from a black air fryer and then removes the crisper plate from the basket.' should be written as 'A hand with pink nail polish is reaching in to a black air fryer to remove the crisper plate.'
-
-Very similar scenes should just be combined or skipped.  If there are two somewhat differing scenes (ie, just a change of focus or angle) there is no need to make it count as a different scene.
-
-Each scene you describe should stand on it's own as a description of the scene with no prior assumptions of continuity on the readers part - the user should be able to perfectly imagine the scene based purely on your visual description.
-
-Please add no other chat or text - just respond with the list of scene descriptions.
-
-Thank you!"""
+    prompt = get_prompt("summarise")
     pass
 
-def generate_images(summary: str) -> list[str]:
-    # we split the summary into sentences
-    # we generate an image for each sentence
-    # we return the list of image paths
-    pass
+def generate_single_image(paragraph: str, output_filename: str) -> str:
+    print("Getting image prompt for paragraph")
+    prompt = get_prompt("image", {"paragraph": paragraph, "styles": get_random_styles(5)})
+    response = get_llm_response(prompt, model="anthropic/claude-sonnet-4-20250514")
+    image_prompt = response.choices[0].message.content
+    print(f"Image prompt: {image_prompt}")
+    print("-" * 20)
+    print("Generating image for paragraph")
+    image_file = generate_image(image_prompt, output_file=output_filename, model="google/imagen-4")
+    print(f"Image generated: {image_file}")
+    print("-" * 20)
+    return image_file
 
-
-def generate_final_video(images: list[str], output_file: str) -> str:
-    # we generate a video from the images with a cross-fade between each image
-    # we return the path to the video
-    return output_file
-
-def main(video_url: str) -> str:
-    video_path = download_video(video_url)
-    summary = summarize_video(video_path)
-    images = generate_images(summary)
-    final_video = generate_final_video(images)
-    return final_video
-
-if __name__ == "__main__":
-    transcript_file = "recipethis.md"
-    paragraphs = Path(transcript_file).read_text().split("\n")
+def generate_images(paragraphs: list[str], prefix: str = "image", output_dir: str = "images") -> list[str]:
     filenames = []
     for i, paragraph in enumerate(paragraphs):
         paragraph = paragraph.strip()
         if not paragraph:
             continue
-        image_filename = f"recipethis_{i:02d}.jpg"
-        filenames.append(os.path.join("images", image_filename))
-        if os.path.exists(os.path.join("images", image_filename)):
+        image_filename = os.path.join(output_dir, f"{prefix}_{i:03d}.jpg")
+        filenames.append(image_filename)
+        if os.path.exists(image_filename):
             print(f"Image already exists: {image_filename}")
             continue
         print(f"Processing paragraph {i}: {paragraph}")
         print("-" * 20)
-        print("Getting image prompt for paragraph")
-        prompt = f"""
-        You are a helpful assistant that generates image prompts for a Stable Diffusion image
-        generator for a given paragraph describing a scene in a video.
+        generate_single_image(paragraph, image_filename)
+    return filenames
 
-        <scene-description>
-        {paragraph}
-        </scene-description>
-
-        The image prompt should be a single sentence that captures the essence of the scene.
-        The image prompt should include detailed descriptions as fitting a Stable Diffusion image prompt.
-        The image prompt should be visually appealing and engaging.
-        The image prompt should be artistic and creative.
-        The image prompt should include a stylistic style to use when generating the image.
-        The image prompt should be inspiring - imagine you are describing the scene to a creative artist to inspire them in their own media and world.
-
-        Please respond with ONLY the image prompt, no other text.  Your response will be given directly
-        to the Stable Diffusion image generator so any extra text will cause the image generator to fail.  Do not
-        wrap the prompt in any xml or markdown tags.
-
-        You MUST use one of the following styles, artists and movements:
-        {", ".join(random.sample(all_styles, 5))}
-
-        Be wild and creative in your thinking!  The person who sees the final image should think "WOW!!!!"
-        """
-        response = get_llm_response(prompt, model="anthropic/claude-sonnet-4-20250514")
-        image_prompt = response.choices[0].message.content
-        print(f"Image prompt: {image_prompt}")
-        print("-" * 20)
-        print("Generating image for paragraph")
-        image_file = generate_image(image_prompt, output_file=image_filename, model="google/imagen-4")
-        print(f"Image generated: {image_file}")
-        print("-" * 20)
-        # break
-
-
+def generate_final_video(filenames: list[str], output_file: str, steps_per_morph: int = 50) -> str:
     print("Generating morph video")
-    final_video = generate_morph_video(filenames, output_path="final_video.mp4")
-    print(f"Final video generated: {final_video}")
+    final_video = generate_morph_video(filenames, output_path=output_file, steps_per_morph=steps_per_morph)
+    return final_video
 
-    # print(f"output_file: {output_file}")
+def generate_video(transcript_file: str, output_file: str = "final_video.mp4", steps_per_morph: int = 50) -> str:
+    paragraphs = Path(transcript_file).read_text().split("\n")
+    prefix = Path(transcript_file).stem
+    filenames = generate_images(paragraphs, prefix=prefix)
+    video_file = generate_final_video(filenames, output_file, steps_per_morph)
+    print(f"Final video generated: {video_file}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("transcript_file", type=str, help="The transcript file to generate a video from")
+    parser.add_argument("--output_file", type=str, help="The output file to save the video to", default="final_video.mp4")
+    parser.add_argument("--steps_per_morph", type=int, help="The number of steps per morph", default=50)
+    args = parser.parse_args()
+    generate_video(args.transcript_file, args.output_file, args.steps_per_morph)

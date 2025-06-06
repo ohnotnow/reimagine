@@ -22,9 +22,6 @@ def generate_image(prompt: str, model=DEFAULT_MODEL, aspect_ratio: str = DEFAULT
         # make a random file name
         output_file = f"{uuid.uuid4()}.jpg"
 
-    output_file = os.path.join(IMAGE_DIR, output_file)
-    os.makedirs(IMAGE_DIR, exist_ok=True)
-
     with open(output_file, "wb") as file:
         file.write(output.read())
 
