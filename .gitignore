@@ -2,3 +2,5 @@ __pycache__*
 transcript.md
 recipethis.md
 images/*
+*.mp4
+.DS_Store

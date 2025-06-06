@@ -41,8 +41,8 @@ def generate_images(summary: str) -> list[str]:
 
 
 def create_crossfade_video(image_files, output_file, pause_duration=2, fade_duration=1):
-    # Calculate the total duration each image should be displayed
-    image_duration = pause_duration + fade_duration
+    # Calculate the total video duration
+    total_duration = (pause_duration + fade_duration) * (len(image_files) - 1) + pause_duration
 
     filter_complex_parts = []
     for i in range(len(image_files) - 1):
@@ -52,7 +52,7 @@ def create_crossfade_video(image_files, output_file, pause_duration=2, fade_dura
             input1 = f"[x{i}]"
         input2 = f"[{i+1}:v]"
         output = f"[x{i+1}]" if i < len(image_files) - 2 else "[temp]"
-        offset = image_duration * i
+        offset = (pause_duration + fade_duration) * i
         fade = f"{input1}{input2}xfade=transition=fade:duration={fade_duration}:offset={offset}{output};"
         filter_complex_parts.append(fade)
 
@@ -60,9 +60,9 @@ def create_crossfade_video(image_files, output_file, pause_duration=2, fade_dura
     filter_complex = ''.join(filter_complex_parts) + "[temp]format=yuv420p[v]"
 
     cmd = ['ffmpeg']
-    # Add each image file with -i flag and specify duration for each image
+    # Add each image file with the total duration so they can all participate in crossfades
     for image_file in image_files:
-        cmd.extend(['-loop', '1', '-t', str(image_duration), '-i', image_file])
+        cmd.extend(['-loop', '1', '-t', str(total_duration), '-i', image_file])
     cmd += ['-filter_complex', filter_complex, '-map', '[v]', '-y', output_file]
 
     subprocess.run(cmd)

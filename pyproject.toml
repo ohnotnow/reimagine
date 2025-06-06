@@ -6,5 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "litellm>=1.69.0",
+    "numpy>=2.2.6",
+    "opencv-python>=4.11.0.86",
     "replicate>=1.0.7",
 ]
