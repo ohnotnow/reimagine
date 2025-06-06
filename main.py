@@ -4,6 +4,7 @@ import subprocess
 from llm import get_llm_response
 from image_gen import generate_image
 import random
+from morph import generate_morph_video
 # Artists and Styles for Diffusion Model Prompts
 
 # Visual Artists
@@ -53,6 +54,7 @@ digital_styles = [
 
 # Combined list for easy random selection
 all_styles = artists + art_styles + directors + photo_styles + digital_styles
+all_styles.shuffle()
 
 # Example usage:
 # import random
@@ -95,37 +97,9 @@ def generate_images(summary: str) -> list[str]:
     pass
 
 
-def create_crossfade_video(image_files, output_file, pause_duration=2, fade_duration=1):
-    # Calculate the total video duration
-    total_duration = (pause_duration + fade_duration) * (len(image_files) - 1) + pause_duration
-
-    filter_complex_parts = []
-    for i in range(len(image_files) - 1):
-        if i == 0:
-            input1 = f"[0:v]"
-        else:
-            input1 = f"[x{i}]"
-        input2 = f"[{i+1}:v]"
-        output = f"[x{i+1}]" if i < len(image_files) - 2 else "[temp]"
-        offset = (pause_duration + fade_duration) * i
-        fade = f"{input1}{input2}xfade=transition=fade:duration={fade_duration}:offset={offset}{output};"
-        filter_complex_parts.append(fade)
-
-    # Properly connect the format filter to the final output
-    filter_complex = ''.join(filter_complex_parts) + "[temp]format=yuv420p[v]"
-
-    cmd = ['ffmpeg']
-    # Add each image file with the total duration so they can all participate in crossfades
-    for image_file in image_files:
-        cmd.extend(['-loop', '1', '-t', str(total_duration), '-i', image_file])
-    cmd += ['-filter_complex', filter_complex, '-map', '[v]', '-y', output_file]
-
-    subprocess.run(cmd)
-
 def generate_final_video(images: list[str], output_file: str) -> str:
     # we generate a video from the images with a cross-fade between each image
     # we return the path to the video
-    create_crossfade_video(images, output_file, pause_duration=2, fade_duration=1)
     return output_file
 
 def main(video_url: str) -> str:
@@ -164,6 +138,7 @@ if __name__ == "__main__":
         The image prompt should be visually appealing and engaging.
         The image prompt should be artistic and creative.
         The image prompt should include a stylistic style to use when generating the image.
+        The image prompt should be inspiring - imagine you are describing the scene to a creative artist to inspire them in their own media and world.
 
         Please respond with ONLY the image prompt, no other text.  Your response will be given directly
         to the Stable Diffusion image generator so any extra text will cause the image generator to fail.  Do not
@@ -182,7 +157,7 @@ if __name__ == "__main__":
         print("-" * 20)
         # break
 
-    # final_video = generate_final_video(filenames, output_file="final_video.mp4")
-    # print(f"Final video generated: {final_video}")
+    final_video = generate_morph_video(filenames, output_path="final_video.mp4")
+    print(f"Final video generated: {final_video}")
 
     # print(f"output_file: {output_file}")

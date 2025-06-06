@@ -19,7 +19,7 @@ def generate_morph_frames(img1, img2, steps=20):
 
     # Calculate dense optical flow
     flow = cv2.calcOpticalFlowFarneback(img1_gray, img2_gray,
-                                        None, 0.5, 3, 15, 3, 5, 1.2, 0)
+                                        None, 0.8, 5, 25, 3, 5, 1.5, 0)
 
     morph_frames = []
     for i in range(steps + 1):  # Include the final frame
@@ -40,7 +40,7 @@ def save_video(frames, output_path, fps=30):
         out.write(frame)
     out.release()
 
-def main(input_dir, output_path, steps_per_morph=20):
+def generate_morph_video(input_dir, output_path, steps_per_morph=20):
     images, files = load_images(input_dir)
     all_frames = []
     for i in range(len(images) - 1):
@@ -56,4 +56,4 @@ if __name__ == "__main__":
     parser.add_argument("--frames-per-morph", type=int, default=20, help="Frames per morph transition")
     args = parser.parse_args()
 
-    main(args.input_images, args.output_video, args.frames_per_morph)
+    generate_morph_video(args.input_images, args.output_video, args.frames_per_morph)
