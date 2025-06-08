@@ -60,13 +60,15 @@ def generate_final_video(filenames: list[str], output_file: str, steps_per_morph
     return final_video
 
 def generate_video(transcript_file: str, output_file: str = "final_video.mp4", steps_per_morph: int = 50, llm_model: str = "anthropic/claude-sonnet-4-20250514", image_model: str = "google/imagen-4", max_scenes: int = 10) -> str:
-    paragraphs = Path(transcript_file).read_text().split("\n")
+    # also skip any blank lines
+    paragraphs = [line.strip() for line in Path(transcript_file).read_text().split("\n") if line.strip()]
     if len(paragraphs) > max_scenes:
         print(f"Shortening transcript to {max_scenes} scenes")
         prompt = get_prompt("reduce_scenes", {"original_scenes": Path(transcript_file).read_text()})
         shortened_transcript = get_llm_response(prompt, model=llm_model).choices[0].message.content
-        paragraphs = shortened_transcript.split("\n")
+        paragraphs = [line.strip() for line in shortened_transcript.split("\n") if line.strip()]
         print(f"Shortened transcript to {len(paragraphs)} scenes")
+        print("-" * 20)
 
     prefix = Path(transcript_file).stem
     filenames = generate_images(paragraphs, prefix=prefix, llm_model=llm_model, image_model=image_model)
@@ -76,10 +78,10 @@ def generate_video(transcript_file: str, output_file: str = "final_video.mp4", s
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("transcript_file", type=str, help="The transcript file to generate a video from")
-    parser.add_argument("--output_file", type=str, help="The output file to save the video to", default="final_video.mp4")
-    parser.add_argument("--steps_per_morph", type=int, help="The number of steps per morph", default=50)
+    parser.add_argument("--output-file", type=str, help="The output file to save the video to", default="final_video.mp4")
+    parser.add_argument("--steps-per-morph", type=int, help="The number of steps per morph", default=50)
     parser.add_argument("--llm-model", type=str, help="The LLM model to use", default="anthropic/claude-sonnet-4-20250514")
     parser.add_argument("--image-model", type=str, help="The image generation model to use", default="google/imagen-4")
     parser.add_argument("--max-scenes", type=int, help="The maximum number of scenes to generate", default=10)
     args = parser.parse_args()
-    generate_video(args.transcript_file, args.output_file, args.steps_per_morph, args.llm_model, args.image_model)
+    generate_video(args.transcript_file, args.output_file, args.steps_per_morph, args.llm_model, args.image_model, args.max_scenes)
