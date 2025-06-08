@@ -1,6 +1,6 @@
 __pycache__*
-stalker.md
-recipethis.md
+*.md
+!README.md
 images/*
 *.mp4
 .DS_Store

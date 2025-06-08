@@ -76,7 +76,7 @@ uv run main.py path/to/your_transcript.md \
 ## Usage
 
 ```bash
-uv run main.py <transcript_file> [--output_file OUTPUT] [--steps_per_morph N]
+uv run main.py <transcript_file> [--output_file OUTPUT] [--steps_per_morph N] [--llm-model MODEL_NAME] [--image-model MODEL_NAME]
 ```
 
 Arguments:
@@ -87,6 +87,10 @@ Arguments:
   Path to write the resulting MP4 video.
 - `--steps_per_morph` (default: `50`)
   Number of intermediate frames per image transition - bigger means a slower/gentler image transition.
+- `--llm-model` (default: `anthropic/claude-sonnet-4-20250514`)
+  Which LLM to call to do the image prompt generation.  Uses LiteLLM format, eg 'openai/gpt-4.1', 'openrouter/google/gemini-2.5-pro'
+- `--image-model` (default: `google/imagen-4`)
+  Which image generator to use via the [Replicate API](https://replicate.com/)
 
 ---
 
