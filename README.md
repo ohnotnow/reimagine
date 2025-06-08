@@ -76,7 +76,7 @@ uv run main.py path/to/your_transcript.md \
 ## Usage
 
 ```bash
-uv run main.py <transcript_file> [--output_file OUTPUT] [--steps_per_morph N] [--llm-model MODEL_NAME] [--image-model MODEL_NAME]
+uv run main.py <transcript_file> [--output_file OUTPUT] [--steps_per_morph N] [--llm-model MODEL_NAME] [--image-model MODEL_NAME] [--max-scenes NUMBER]
 ```
 
 Arguments:
@@ -91,6 +91,8 @@ Arguments:
   Which LLM to call to do the image prompt generation.  Uses LiteLLM format, eg 'openai/gpt-4.1', 'openrouter/google/gemini-2.5-pro'
 - `--image-model` (default: `google/imagen-4`)
   Which image generator to use via the [Replicate API](https://replicate.com/)
+- `--max-scenes` (default: 10)
+  The maximum number of scenes to generate an image for.  If the initial transcript has more than this - then calls out to the LLM model to consolodate them
 
 ---
 
